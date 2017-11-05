@@ -2,6 +2,7 @@
 import xlrd
 import requests
 import re
+import json
 
 # define english words as latin-1 + common punctuations + Super/Sub scripts + currency + math symbol
 non_en_pattern = re.compile('([\u0300-\u1cdf]|[\u1f00-\u1fff]|[\u2b00-\ua6ff]|[\ua800-\ufe1f]|[\ufe30-\uffff])+')
@@ -32,7 +33,6 @@ def process_sentiment(lyric):
     res = requests.post('https://gateway.watsonplatform.net/tone-analyzer/api/v3/tone?version=2017-09-21',
                         auth=authen, data=lyric, headers=headers1)
     result = res.text
-    res.close()
     print(result)
     song_tone = []
     pattern1 = re.compile('\"score\":[01]\.[0-9]+')
@@ -48,8 +48,8 @@ def process_sentiment(lyric):
         j_new = j.split(":")
         id.append(j_new[1])
     for i in range(0, len(score)):
-        song_tone.append("[" + score[i] + ", " + id[i] + "]")
-
+        song_tone.append("{\"score\":" + score[i] + ", \"tone\":" + id[i] + "}")
+    res.close()
     return song_tone
 
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
         if ' - ' in line:
             if sing_name != "":
                 if flag:
-                    #lyrics.encode('utf-8').decode('latin-1')
+                    # lyrics.encode('utf-8').decode('latin-1')
                     song_tone = process_sentiment(lyrics)
                     info.append([sing_name, singer, song_tone])
                 sing_name = ""
@@ -83,28 +83,29 @@ if __name__ == '__main__':
     song_tone = process_sentiment(lyrics)
     info.append([sing_name, singer, song_tone])
     out = open('result', 'w')
-    out.write("{")
-    punc0 = len(info)-1  # to calculate numbers of punc in whole list
+    out.write("{\"songs\":[")
+    # to be debugged
+    info = [i for i in info if len(i[2])!=0]
+    punc0 = len(info) - 1  # to calculate numbers of punc in whole list
     for i in info:
-        if len(i[2])>0:
-            out.write("{ song:" + i[0] + ", singers:[")
-            punc1 = len(i[1])-1
-            for j in i[1]:
-                out.write(j)
-                if punc1 > 0:
-                    out.write(", ")
-                    punc1 = punc1 - 1
-            out.write("], tones:{")
-            punc2 = len(i[2])-1  # to calculate numbers of punctuation
-            for j in i[2]:
-                out.write(j)
-                if punc2>0:
-                    out.write(", ")
-                    punc2 = punc2-1
-            out.write("} } ")
-            if punc0>0:
+        out.write("{\"name\": \"" + i[0] + "\", \"singers\":[")
+        punc1 = len(i[1]) - 1
+        for j in i[1]:
+            out.write("\"" + j + "\"")
+            if punc1 > 0:
                 out.write(", ")
-                punc0 = punc0-1
+                punc1 = punc1 - 1
+        out.write("], \"tones\":[")
+        punc2 = len(i[2]) - 1  # to calculate numbers of punctuation
+        for j in i[2]:
+            out.write(j)
+            if punc2 > 0:
+                out.write(", ")
+                punc2 = punc2 - 1
+        out.write("]} ")
+        if punc0 > 0:
+            out.write(", ")
+            punc0 = punc0 - 1
 
-    out.write(" }")
+    out.write("]}")
     out.close()
