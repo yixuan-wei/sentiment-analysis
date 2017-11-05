@@ -87,24 +87,24 @@ if __name__ == '__main__':
     punc0 = len(info)-1  # to calculate numbers of punc in whole list
     for i in info:
         if len(i[2])>0:
-            out.write("[" + i[0] + ", [")
+            out.write("{ song:" + i[0] + ", singers:[")
             punc1 = len(i[1])-1
             for j in i[1]:
                 out.write(j)
                 if punc1 > 0:
                     out.write(", ")
                     punc1 = punc1 - 1
-            out.write("], [")
+            out.write("], tones:{")
             punc2 = len(i[2])-1  # to calculate numbers of punctuation
             for j in i[2]:
                 out.write(j)
                 if punc2>0:
                     out.write(", ")
                     punc2 = punc2-1
-            out.write("] ] ")
+            out.write("} } ")
             if punc0>0:
                 out.write(", ")
                 punc0 = punc0-1
 
-    out.write("}")
+    out.write(" }")
     out.close()
